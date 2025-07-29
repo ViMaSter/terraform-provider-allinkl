@@ -54,7 +54,8 @@ func (p *allinklProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"kas_login": schema.StringAttribute{
-				Optional: true,
+				Optional:  true,
+				Sensitive: true,
 			},
 			"kas_auth_type": schema.StringAttribute{
 				Optional: true,
