@@ -72,6 +72,9 @@ func (r *ddnsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			},
 			"dyndns_label": schema.StringAttribute{
 				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"dyndns_target_ip": schema.StringAttribute{
 				Required: true,
