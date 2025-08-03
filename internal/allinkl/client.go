@@ -22,12 +22,13 @@ type Authentication interface {
 
 // Client a KAS server client.
 type Client struct {
-	identifier  *Identifier
-	floodTime   time.Time
-	muFloodTime sync.Mutex
-	baseURL     string
-	HTTPClient  *http.Client
+	identifier *Identifier
+	baseURL    string
+	HTTPClient *http.Client
 }
+
+var floodTime time.Time
+var muFloodTime sync.Mutex
 
 func NewClient(username string, kasAuthType string, kasAuthData string) *Client {
 	return &Client{
@@ -110,7 +111,7 @@ func (c *Client) UpdateDDNSUser(ctx context.Context, record DDNSUpdateRequest) (
 		return "", err
 	}
 	c.updateFloodTime(g.Response.KasFloodDelay)
-	return g.Response.ReturnInfo, nil
+	return g.Response.ReturnString, nil
 }
 
 func (c *Client) DeleteDDNSUser(ctx context.Context, dyndnsLogin string) (string, error) {
@@ -156,9 +157,12 @@ func (c *Client) newRequest(ctx context.Context, action string, requestParams an
 }
 
 func (c *Client) do(req *http.Request, result any) error {
-	c.muFloodTime.Lock()
-	time.Sleep(time.Until(c.floodTime))
-	c.muFloodTime.Unlock()
+	muFloodTime.Lock()
+	sleepDuration := time.Until(floodTime)
+	if sleepDuration > 0 {
+		time.Sleep(sleepDuration)
+	}
+	muFloodTime.Unlock()
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return NewHTTPDoError(req, err)
@@ -183,9 +187,9 @@ func (c *Client) do(req *http.Request, result any) error {
 }
 
 func (c *Client) updateFloodTime(delay float64) {
-	c.muFloodTime.Lock()
-	c.floodTime = time.Now().Add(time.Duration(delay * float64(time.Second)))
-	c.muFloodTime.Unlock()
+	muFloodTime.Lock()
+	floodTime = time.Now().Add(time.Duration(delay * float64(time.Second*5)))
+	muFloodTime.Unlock()
 }
 
 func getValue(item *Item) any {
