@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccDDNSResource(t *testing.T) {
+func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
 		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
@@ -20,35 +21,39 @@ func TestAccDDNSResource(t *testing.T) {
 	now := time.Now()
 	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
 
-	testComment := currentSecondsAndMS + "tftest"
-	testPassword := "password"
-	testLabel := currentSecondsAndMS + "tf.test"
-	testTargetIP := "1.2.3.4"
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: providerConfig + fmt.Sprintf(`
-resource "allinkl_ddns" "test" {
+	resourcePath := "allinkl_ddns.test"
+	resourceConfigTemplate := `resource "allinkl_ddns" "test" {
   dyndns_comment   = "%s"
   dyndns_password  = "%s"
   dyndns_zone      = "%s"
   dyndns_label     = "%s"
   dyndns_target_ip = "%s"
-}
-`, testComment, testPassword, testDomain, testLabel, testTargetIP),
+}`
+
+	initialComment := currentSecondsAndMS + "tftest"
+	initialPassword := "password"
+	initialLabel := currentSecondsAndMS + "tf.test"
+	initialTargetIP := "1.2.3.4"
+
+	updatedComment := initialComment + "_updated"
+	updatedPassword := initialPassword + "_updated"
+	updatedLabel := "updated." + initialLabel
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("allinkl_ddns.test", "dyndns_comment", testComment),
-					resource.TestCheckResourceAttr("allinkl_ddns.test", "dyndns_password", testPassword),
-					resource.TestCheckResourceAttr("allinkl_ddns.test", "dyndns_zone", testDomain),
-					resource.TestCheckResourceAttr("allinkl_ddns.test", "dyndns_label", testLabel),
-					resource.TestCheckResourceAttr("allinkl_ddns.test", "dyndns_target_ip", testTargetIP),
-					// Check that dyndns_login starts with "dyn" and ends with at least one digit
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_comment", initialComment),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_password", initialPassword),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_zone", testDomain),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_label", initialLabel),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_target_ip", initialTargetIP),
 					func(s *terraform.State) error {
-						rs, ok := s.RootModule().Resources["allinkl_ddns.test"]
+						rs, ok := s.RootModule().Resources[resourcePath]
 						if !ok {
-							return fmt.Errorf("Not found: allinkl_ddns.test")
+							return fmt.Errorf("Not found: " + resourcePath)
 						}
 						login := rs.Primary.Attributes["dyndns_login"]
 						matched, err := regexp.MatchString(`^dyn[a-fA-F\d]+$`, login)
@@ -60,6 +65,32 @@ resource "allinkl_ddns" "test" {
 						}
 						return nil
 					},
+				),
+			},
+			{
+				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, initialLabel, initialTargetIP),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_comment", updatedComment),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_password", updatedPassword),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_zone", testDomain),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_label", initialLabel),
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_target_ip", initialTargetIP),
+				),
+			},
+			{
+				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, updatedLabel, initialTargetIP),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "dyndns_label", updatedLabel),
 				),
 			},
 		},
