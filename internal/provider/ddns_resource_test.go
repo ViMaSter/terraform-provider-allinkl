@@ -99,3 +99,36 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 		},
 	})
 }
+
+func TestDDNSCreateFailsWithIllegalCharactersInPassword(t *testing.T) {
+	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
+	if testDomain == "" {
+		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+	}
+
+	now := time.Now()
+	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+
+	resourceConfigTemplate := `resource "allinkl_ddns" "test" {
+  dyndns_comment   = "%s"
+  dyndns_password  = "%s"
+  dyndns_zone      = "%s"
+  dyndns_label     = "%s"
+  dyndns_target_ip = "%s"
+}`
+
+	initialComment := currentSecondsAndMS + "tftest"
+	initialPassword := "illegal password"
+	initialLabel := currentSecondsAndMS + "tf.test"
+	initialTargetIP := "1.2.3.4"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      providerConfig + fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
+				ExpectError: regexp.MustCompile(`password_syntax_incorrect: `),
+			},
+		},
+	})
+}
