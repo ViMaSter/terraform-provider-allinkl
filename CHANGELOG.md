@@ -1,3 +1,37 @@
-## 0.1.0 (Unreleased)
+## 0.1.5 (Unreleased)
+
+BUG FIXES:
+
+* Updates changelog.md file
+
+## 0.1.4 (September 5, 2025)
+
+ENHANCEMENTS:
+
+* Adds documentation
+
+## 0.1.3 (September 5, 2025)
+
+ENHANCEMENTS:
+
+* Adds user-readable error messages
+
+## 0.1.2 (August 8, 2025)
+
+BUG FIXES:
+
+* Respects flood timing limits of All-Inkl API
+* Changing `dyndns_label` works by recreating resource
+* Test runs prefix resources with time
+
+## 0.1.1 (July 29, 2025)
+
+ENHANCEMENTS:
+
+* Auto-generates documentation
+
+## 0.1.0 (July 29, 2025)
 
 FEATURES:
+
+* Adds support for DDNS entries
