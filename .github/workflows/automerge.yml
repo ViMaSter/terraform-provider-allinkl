@@ -1,0 +1,24 @@
+name: Integrate `automerge` branches using rebase
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+     - Build and Release
+    types: 
+      - completed
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    steps:
+      - id: automerge
+        name: automerge
+        uses: "pascalgn/automerge-action@v0.16.4"
+        env:
+          GITHUB_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          MERGE_LABELS: "automerge"
+          MERGE_METHOD: "rebase"
+          UPDATE_METHOD: "rebase"
+          UPDATE_RETRIES : 10
+          UPDATE_RETRY_SLEEP: 30
+          LOG: "TRACE"  # or "DEBUG"
