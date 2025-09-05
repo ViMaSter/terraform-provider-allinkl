@@ -3,8 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
-	"terraform-provider-allinkl/internal/allinkl"
 	"time"
+
+	"github.com/vimaster/terraform-provider-allinkl/internal/allinkl"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"

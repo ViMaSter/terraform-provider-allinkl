@@ -3,7 +3,8 @@ package provider
 import (
 	"context"
 	"os"
-	"terraform-provider-allinkl/internal/allinkl"
+
+	"github.com/vimaster/terraform-provider-allinkl/internal/allinkl"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
