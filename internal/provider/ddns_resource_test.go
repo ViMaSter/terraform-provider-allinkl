@@ -42,6 +42,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// create initial DynDNS entry
 			{
 				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -67,6 +68,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 					},
 				),
 			},
+			// create update existing entry without replacement
 			{
 				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, initialLabel, initialTargetIP),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
@@ -82,6 +84,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "dyndns_target_ip", initialTargetIP),
 				),
 			},
+			// update property that forces replacement
 			{
 				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, updatedLabel, initialTargetIP),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
