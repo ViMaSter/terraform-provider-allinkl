@@ -1,0 +1,27 @@
+name: Dependency updates
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    - cron: '27 4 * * *' # Run at 4:27 AM (even numbers = higher load = higher chance of GitHub dropping it)
+
+concurrency:
+  group: renovate-${{ github.ref }}
+  cancel-in-progress: true
+    
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+        
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v43.0.6
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_AUTODISCOVER: true
+          RENOVATE_AUTODISCOVER_FILTER: "vimaster/terraform-provider-allinkl"
