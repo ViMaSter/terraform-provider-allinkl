@@ -119,10 +119,7 @@ func (r *ddnsResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	login, err := r.client.AddDDNSUser(ctx, ddnsReq)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Creating AllInkl DDNS",
-			"Could not create ddns, unexpected error: "+err.Error(),
-		)
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, err.Error())
 		return
 	}
 
@@ -144,10 +141,7 @@ func (r *ddnsResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	ddns, err := r.client.GetDDNSUser(ctx, state.DyndnsLogin.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading AllInkl DDNS",
-			"Could not read AllInkl ddns login "+state.DyndnsLogin.ValueString()+": "+err.Error(),
-		)
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, err.Error())
 		return
 	}
 
@@ -185,26 +179,17 @@ func (r *ddnsResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 	status, err := r.client.UpdateDDNSUser(ctx, ddnsReq)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Updating AllInkl DDNS",
-			"Could not update ddns, unexpected error: "+err.Error(),
-		)
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationUpdate, err.Error())
 		return
 	}
 	if status != "TRUE" {
-		resp.Diagnostics.AddError(
-			"Error Updating AllInkl DDNS",
-			"UpdateDDNSUser returned unexpected status: "+status,
-		)
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationUpdate, "UpdateDDNSUser returned unexpected status: "+status)
 		return
 	}
 
 	ddns, err := r.client.GetDDNSUser(ctx, plan.DyndnsLogin.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error Reading AllInkl DDNS",
-			"Could not read AllInkl ddns login "+plan.DyndnsLogin.ValueString()+": "+err.Error(),
-		)
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, err.Error())
 		return
 	}
 
