@@ -1,4 +1,4 @@
-module terraform-provider-allinkl
+module github.com/vimaster/terraform-provider-allinkl
 
 go 1.23.7
 

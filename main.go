@@ -7,10 +7,12 @@ import (
 	"context"
 	"flag"
 	"log"
-	"terraform-provider-allinkl/internal/provider"
+
+	"github.com/vimaster/terraform-provider-allinkl/internal/provider"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
+
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary.
