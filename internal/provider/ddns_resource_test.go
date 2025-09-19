@@ -54,7 +54,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources[resourcePath]
 						if !ok {
-							return fmt.Errorf("Not found: " + resourcePath)
+							return fmt.Errorf("Not found: %s", resourcePath)
 						}
 						login := rs.Primary.Attributes["dyndns_login"]
 						matched, err := regexp.MatchString(`^dyn[a-fA-F\d]+$`, login)
