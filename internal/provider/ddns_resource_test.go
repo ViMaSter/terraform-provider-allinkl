@@ -44,7 +44,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			// create initial DynDNS entry
 			{
-				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
+				Config: fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "dyndns_comment", initialComment),
 					resource.TestCheckResourceAttr(resourcePath, "dyndns_password", initialPassword),
@@ -70,7 +70,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 			},
 			// create update existing entry without replacement
 			{
-				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, initialLabel, initialTargetIP),
+				Config: fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, initialLabel, initialTargetIP),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionUpdate),
@@ -86,7 +86,7 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 			},
 			// update property that forces replacement
 			{
-				Config: providerConfig + fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, updatedLabel, initialTargetIP),
+				Config: fmt.Sprintf(resourceConfigTemplate, updatedComment, updatedPassword, testDomain, updatedLabel, initialTargetIP),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionDestroyBeforeCreate),
@@ -126,7 +126,7 @@ func TestDDNSCreateFailsWithIllegalCharactersInPassword(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      providerConfig + fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
+				Config:      fmt.Sprintf(resourceConfigTemplate, initialComment, initialPassword, testDomain, initialLabel, initialTargetIP),
 				ExpectError: regexp.MustCompile(`password_syntax_incorrect: `),
 			},
 		},
