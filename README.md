@@ -24,8 +24,9 @@ To compile the provider, run `go install`. This will build the provider and put 
 
 1. Set `ALLINKL_KAS_LOGIN` to your KAS username (starts with `w`)
 2. Set `ALLINKL_KAS_AUTH_DATA` to your KAS password
-2. Set `ALLINKL_TEST_DOMAIN` to a domain in your account, that tests will use to generate DynDNS entries
-3. Run `make testacc`
+3. Set `ALLINKL_KAS_AUTH_TYPE` to `plain`
+4. Set `ALLINKL_TEST_DOMAIN` to a domain in your account, that tests will use to generate DynDNS entries
+5. Run `make testacc`
 
 ### Documentation
 
