@@ -67,6 +67,7 @@ jobs:
       - env:
           TF_ACC: "1"
           ALLINKL_KAS_LOGIN: ${{ secrets.ALLINKL_KAS_LOGIN }}
+          ALLINKL_KAS_AUTH_TYPE: ${{ secrets.ALLINKL_KAS_AUTH_TYPE }}
           ALLINKL_KAS_AUTH_DATA: ${{ secrets.ALLINKL_KAS_AUTH_DATA }}
           ALLINKL_TEST_DOMAIN: ${{ secrets.ALLINKL_TEST_DOMAIN }}
         run: go test -v -cover ./internal/provider/
