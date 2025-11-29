@@ -63,12 +63,18 @@ func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (ReturnInfo,
 		return empty, err
 	}
 
+	c.updateFloodTime(g.Response.KasFloodDelay)
+
+	if len(g.Response.ReturnInfo) == 0 {
+		var empty ReturnInfo
+		return empty, nil
+	}
+
 	if len(g.Response.ReturnInfo) != 1 {
 		var empty ReturnInfo
 		return empty, fmt.Errorf("expected exactly 1 DDNS user, got %d", len(g.Response.ReturnInfo))
 	}
 
-	c.updateFloodTime(g.Response.KasFloodDelay)
 	return g.Response.ReturnInfo[0], nil
 }
 
