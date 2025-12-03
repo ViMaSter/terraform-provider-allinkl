@@ -15,11 +15,10 @@ import (
 func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
-		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
 	}
 
-	now := time.Now()
-	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	resourcePath := "allinkl_records.test"
 	resourceConfigTemplate := `resource "allinkl_records" "test" {
@@ -104,11 +103,10 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
-		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
 	}
 
-	now := time.Now()
-	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	resourceConfigTemplate := `resource "allinkl_records" "test" {
   zone_host   = "%s"
@@ -137,11 +135,10 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 func TestRecordsCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
-		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
 	}
 
-	now := time.Now()
-	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	resourceConfigTemplate := `resource "allinkl_records" "test" {
   zone_host   = "%s"
@@ -153,7 +150,7 @@ func TestRecordsCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
 
 	initialType := "A"
 	initialName := currentSecondsAndMS + "tf.test"
-	initialData := "mail.example.com."
+	initialData := "203.0.113.10"
 	initialAux := 10
 
 	resource.Test(t, resource.TestCase{
