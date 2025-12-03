@@ -12,6 +12,57 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+func TestValidateDNSRecord(t *testing.T) {
+	tests := []struct {
+		name       string
+		recordType string
+		recordAux  int64
+		want       bool
+	}{
+		// Test zero aux values are accepted for all record types
+		{"zero aux with A record", "A", 0, true},
+		{"zero aux with AAAA record", "AAAA", 0, true},
+		{"zero aux with CNAME record", "CNAME", 0, true},
+		{"zero aux with TXT record", "TXT", 0, true},
+		{"zero aux with MX record", "MX", 0, true},
+		{"zero aux with SRV record", "SRV", 0, true},
+
+		// Test uppercase MX and SRV allow non-zero aux
+		{"non-zero aux with MX record (uppercase)", "MX", 10, true},
+		{"non-zero aux with SRV record (uppercase)", "SRV", 10, true},
+
+		// Test lowercase mx and srv allow non-zero aux
+		{"non-zero aux with mx record (lowercase)", "mx", 10, true},
+		{"non-zero aux with srv record (lowercase)", "srv", 10, true},
+
+		// Test non-zero aux is rejected for record types other than MX and SRV
+		{"non-zero aux with A record", "A", 10, false},
+		{"non-zero aux with AAAA record", "AAAA", 10, false},
+		{"non-zero aux with CNAME record", "CNAME", 10, false},
+		{"non-zero aux with TXT record", "TXT", 10, false},
+		{"non-zero aux with NS record", "NS", 10, false},
+
+		// Test lowercase non-MX/SRV types also reject non-zero aux
+		{"non-zero aux with a record (lowercase)", "a", 10, false},
+		{"non-zero aux with aaaa record (lowercase)", "aaaa", 10, false},
+		{"non-zero aux with cname record (lowercase)", "cname", 10, false},
+		{"non-zero aux with txt record (lowercase)", "txt", 10, false},
+
+		// Test negative aux values
+		{"negative aux with MX record", "MX", -10, true},
+		{"negative aux with A record", "A", -10, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ValidateDNSRecord(tt.recordType, tt.recordAux)
+			if got != tt.want {
+				t.Errorf("ValidateDNSRecord(%q, %d) = %v, want %v", tt.recordType, tt.recordAux, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestDNSCreateUpdateWithoutRecreate(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
