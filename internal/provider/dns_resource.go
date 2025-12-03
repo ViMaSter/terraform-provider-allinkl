@@ -19,28 +19,28 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &recordsResource{}
-	_ resource.ResourceWithConfigure   = &recordsResource{}
-	_ resource.ResourceWithImportState = &recordsResource{}
+	_ resource.Resource                = &dnsResource{}
+	_ resource.ResourceWithConfigure   = &dnsResource{}
+	_ resource.ResourceWithImportState = &dnsResource{}
 )
 
-// NewRecordsResource is a helper function to simplify the provider implementation.
-func NewRecordsResource() resource.Resource {
-	return &recordsResource{}
+// NewDNSResource is a helper function to simplify the provider implementation.
+func NewDNSResource() resource.Resource {
+	return &dnsResource{}
 }
 
-// recordsResource is the resource implementation.
-type recordsResource struct {
+// dnsResource is the resource implementation.
+type dnsResource struct {
 	client *allinkl.Client
 }
 
 // Metadata returns the resource type name.
-func (r *recordsResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_records"
+func (r *dnsResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_dns"
 }
 
-// recordsResourceModel maps the resource schema data.
-type recordsResourceModel struct {
+// dnsResourceModel maps the resource schema data.
+type dnsResourceModel struct {
 	RecordId    types.Int64  `tfsdk:"record_id"` // synthetic key like dyndns_login
 	LastUpdated types.String `tfsdk:"last_updated"`
 	ZoneHost    types.String `tfsdk:"zone_host"`
@@ -51,7 +51,7 @@ type recordsResourceModel struct {
 }
 
 // Schema defines the schema for the resource.
-func (r *recordsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *dnsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"record_id": schema.Int64Attribute{
@@ -85,7 +85,7 @@ func (r *recordsResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 	}
 }
 
-func (d *recordsResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (d *recordsResource) Configure(_ context.Context, req resource.ConfigureReq
 	d.client = client
 }
 
-func ValidateRecord(recordType string, recordAux int64) bool {
+func ValidateDNSRecord(recordType string, recordAux int64) bool {
 	if recordType != "MX" && recordType != "mx" && recordType != "SRV" && recordType != "srv" {
 		if recordAux != 0 {
 			return false
@@ -112,8 +112,8 @@ func ValidateRecord(recordType string, recordAux int64) bool {
 }
 
 // Create creates the resource and sets the initial Terraform state.
-func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan recordsResourceModel
+func (r *dnsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan dnsResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -121,12 +121,12 @@ func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Validate aux: only allowed non-zero for MX or SRV. Otherwise must be 0.
-	if !ValidateRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
+	if !ValidateDNSRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, "record_aux must be empty or 0 unless record_type is MX or SRV")
 		return
 	}
 
-	recReq := allinkl.RecordRequest{
+	recReq := allinkl.DNSRequest{
 		ZoneHost:   plan.ZoneHost.ValueString(),
 		RecordType: plan.RecordType.ValueString(),
 		RecordName: plan.RecordName.ValueString(),
@@ -134,7 +134,7 @@ func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest
 		RecordAux:  plan.RecordAux.ValueInt64(),
 	}
 
-	recordId, err := r.client.AddRecord(ctx, recReq)
+	recordId, err := r.client.AddDNS(ctx, recReq)
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, err.Error())
 		return
@@ -149,28 +149,28 @@ func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (r *recordsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state recordsResourceModel
+func (r *dnsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state dnsResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	records, err := r.client.GetRecords(ctx, state.ZoneHost.ValueString())
+	dnsRecords, err := r.client.GetDNS(ctx, state.ZoneHost.ValueString())
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, err.Error())
 		return
 	}
 
-	var record allinkl.GetRecordReturnInfo
-	for _, r := range records {
+	var dns allinkl.GetDNSReturnInfo
+	for _, r := range dnsRecords {
 		recordAsInt64, err := strconv.ParseInt(string(r.RecordId), 10, 64)
 		if err != nil {
 			continue
 		}
 		if recordAsInt64 == state.RecordId.ValueInt64() {
-			record = allinkl.GetRecordReturnInfo{
+			dns = allinkl.GetDNSReturnInfo{
 				RecordZone: r.RecordZone,
 				RecordType: r.RecordType,
 				RecordName: r.RecordName,
@@ -181,22 +181,22 @@ func (r *recordsResource) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	if record.RecordName == "" {
+	if dns.RecordName == "" {
 		resp.Diagnostics.AddError(
-			"Record Not Found",
+			"DNS Not Found",
 			fmt.Sprintf("No record found for login: %d", state.RecordId.ValueInt64()),
 		)
 		return
 	}
 
-	state = recordsResourceModel{
+	state = dnsResourceModel{
 		RecordId:    types.Int64Value(state.RecordId.ValueInt64()),
 		LastUpdated: state.LastUpdated,
-		ZoneHost:    types.StringValue(record.RecordZone),
-		RecordType:  types.StringValue(record.RecordType),
-		RecordName:  types.StringValue(record.RecordName),
-		RecordData:  types.StringValue(record.RecordData),
-		RecordAux:   types.Int64Value(record.RecordAux),
+		ZoneHost:    types.StringValue(dns.RecordZone),
+		RecordType:  types.StringValue(dns.RecordType),
+		RecordName:  types.StringValue(dns.RecordName),
+		RecordData:  types.StringValue(dns.RecordData),
+		RecordAux:   types.Int64Value(dns.RecordAux),
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -204,15 +204,15 @@ func (r *recordsResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 // Update updates the resource and sets the updated Terraform state on success.
-func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan recordsResourceModel
+func (r *dnsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan dnsResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	recUpd := allinkl.RecordUpdateRequest{
+	recUpd := allinkl.DNSUpdateRequest{
 		RecordId:   plan.RecordId.ValueInt64(),
 		ZoneHost:   plan.ZoneHost.ValueString(),
 		RecordType: plan.RecordType.ValueString(),
@@ -222,12 +222,12 @@ func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Validate aux: only allowed non-zero for MX or SRV. Otherwise must be 0.
-	if !ValidateRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
+	if !ValidateDNSRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, "record_aux must be empty or 0 unless record_type is MX or SRV")
 		return
 	}
 
-	status, err := r.client.UpdateRecord(ctx, recUpd)
+	status, err := r.client.UpdateDNS(ctx, recUpd)
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationUpdate, err.Error())
 		return
@@ -237,36 +237,36 @@ func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	records, err := r.client.GetRecords(ctx, plan.ZoneHost.ValueString())
+	dnsRecords, err := r.client.GetDNS(ctx, plan.ZoneHost.ValueString())
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, err.Error())
 		return
 	}
-	var record allinkl.GetRecordReturnInfo
-	for _, r := range records {
-		recordAsInt64, err := strconv.ParseInt(string(r.RecordId), 10, 64)
+	var dns allinkl.GetDNSReturnInfo
+	for _, r := range dnsRecords {
+		idAsInt64, err := strconv.ParseInt(string(r.RecordId), 10, 64)
 		if err != nil {
 			continue
 		}
-		if recordAsInt64 == plan.RecordId.ValueInt64() {
-			record = r
+		if idAsInt64 == plan.RecordId.ValueInt64() {
+			dns = r
 			break
 		}
 	}
 
-	recordAsInt64, err := strconv.ParseInt(string(record.RecordId), 10, 64)
+	idAsInt64, err := strconv.ParseInt(string(dns.RecordId), 10, 64)
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, "Could not parse record ID: "+err.Error())
 		return
 	}
-	plan = recordsResourceModel{
-		RecordId:    types.Int64Value(recordAsInt64),
+	plan = dnsResourceModel{
+		RecordId:    types.Int64Value(idAsInt64),
 		LastUpdated: types.StringValue(time.Now().Format(time.RFC850)),
-		ZoneHost:    types.StringValue(record.RecordZone),
-		RecordType:  types.StringValue(record.RecordType),
-		RecordName:  types.StringValue(record.RecordName),
-		RecordData:  types.StringValue(record.RecordData),
-		RecordAux:   types.Int64Value(record.RecordAux),
+		ZoneHost:    types.StringValue(dns.RecordZone),
+		RecordType:  types.StringValue(dns.RecordType),
+		RecordName:  types.StringValue(dns.RecordName),
+		RecordData:  types.StringValue(dns.RecordData),
+		RecordAux:   types.Int64Value(dns.RecordAux),
 	}
 
 	diags = resp.State.Set(ctx, plan)
@@ -274,15 +274,15 @@ func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
-func (r *recordsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state recordsResourceModel
+func (r *dnsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state dnsResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	deleted, err := r.client.DeleteRecord(ctx, state.RecordId.ValueInt64())
+	deleted, err := r.client.DeleteDNS(ctx, state.RecordId.ValueInt64())
 	if deleted != "" {
 		resp.Diagnostics.AddError(
 			"Error Deleting AllInkl Records",
@@ -292,7 +292,7 @@ func (r *recordsResource) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 }
 
-func (r *recordsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *dnsResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	if req.ID == "" {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID",

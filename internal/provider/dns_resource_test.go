@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
+func TestDNSCreateUpdateWithoutRecreate(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
 		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
@@ -20,8 +20,8 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 
 	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	resourcePath := "allinkl_records.test"
-	resourceConfigTemplate := `resource "allinkl_records" "test" {
+	resourcePath := "allinkl_dns.test"
+	resourceConfigTemplate := `resource "allinkl_dns" "test" {
   zone_host   = "%s"
   record_type = "%s"
   record_name = "%s"
@@ -42,7 +42,7 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// create initial Record entry
+			// create initial DNS entry
 			{
 				Config: fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData, initialAux),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -100,7 +100,7 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 	})
 }
 
-func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
+func TestDNSCreateFailsWithIllegalAux(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
 		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
@@ -108,7 +108,7 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 
 	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	resourceConfigTemplate := `resource "allinkl_records" "test" {
+	resourceConfigTemplate := `resource "allinkl_dns" "test" {
   zone_host   = "%s"
   record_type = "%s"
   record_name = "%s"
@@ -132,7 +132,7 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 	})
 }
 
-func TestRecordsCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
+func TestDNSCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
 		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
@@ -140,7 +140,7 @@ func TestRecordsCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
 
 	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	resourceConfigTemplate := `resource "allinkl_records" "test" {
+	resourceConfigTemplate := `resource "allinkl_dns" "test" {
   zone_host   = "%s"
   record_type = "%s"
   record_name = "%s"
