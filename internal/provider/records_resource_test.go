@@ -30,14 +30,14 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
   record_aux  = %d
 }`
 
-	initialType := "A"
+	initialType := "MX"
 	initialName := currentSecondsAndMS + "tf.test"
-	initialData := "1.2.3.4"
+	initialData := "mail.example.com."
 	initialAux := 10
 
-	updatedType := "AAAA"
+	updatedType := "MX"
 	updatedName := "updated." + initialName
-	updatedData := "2001:db8::1"
+	updatedData := "mail2.example.com."
 	updatedAux := 20
 
 	resource.Test(t, resource.TestCase{
@@ -78,7 +78,7 @@ func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
 					},
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "zone_host", testDomain+"."),
+					resource.TestCheckResourceAttr(resourcePath, "zone_host", testDomain),
 					resource.TestCheckResourceAttr(resourcePath, "record_type", updatedType),
 					resource.TestCheckResourceAttr(resourcePath, "record_name", initialName),
 					resource.TestCheckResourceAttr(resourcePath, "record_data", updatedData),
@@ -111,7 +111,7 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
 
 	resourceConfigTemplate := `resource "allinkl_records" "test" {
-  zone_host   = "%s"
+  zone_host   = "%s."
   record_type = "%s"
   record_name = "%s"
   record_data = "%s"

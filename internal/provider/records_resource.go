@@ -133,7 +133,6 @@ func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest
 		RecordData: plan.RecordData.ValueString(),
 		RecordAux:  plan.RecordAux.ValueInt64(),
 	}
-	//
 
 	recordId, err := r.client.AddRecord(ctx, recReq)
 	if err != nil {
@@ -143,6 +142,7 @@ func (r *recordsResource) Create(ctx context.Context, req resource.CreateRequest
 
 	plan.RecordId = types.Int64Value(recordId)
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
+	plan.ZoneHost = types.StringValue(plan.ZoneHost.ValueString())
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -208,7 +208,6 @@ func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest
 	var plan recordsResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
-	resp.Diagnostics.AddError("sssss", "sssss")
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -220,6 +219,12 @@ func (r *recordsResource) Update(ctx context.Context, req resource.UpdateRequest
 		RecordName: plan.RecordName.ValueString(),
 		RecordData: plan.RecordData.ValueString(),
 		RecordAux:  plan.RecordAux.ValueInt64(),
+	}
+
+	// Validate aux: only allowed non-zero for MX or SRV. Otherwise must be 0.
+	if !ValidateRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, "record_aux must be empty or 0 unless record_type is MX or SRV")
+		return
 	}
 
 	status, err := r.client.UpdateRecord(ctx, recUpd)
