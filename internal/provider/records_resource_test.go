@@ -111,16 +111,16 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
 
 	resourceConfigTemplate := `resource "allinkl_records" "test" {
-  zone_host   = "%s."
+  zone_host   = "%s"
   record_type = "%s"
   record_name = "%s"
   record_data = "%s"
   record_aux  = %d
 }`
 
-	initialType := "A"
+	initialType := "MX"
 	initialName := currentSecondsAndMS + "tf.test"
-	initialData := "1.2.3.4"
+	initialData := "mail.example.com."
 	initialAux := -100
 
 	resource.Test(t, resource.TestCase{
@@ -129,6 +129,39 @@ func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
 			{
 				Config:      fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData, initialAux),
 				ExpectError: regexp.MustCompile(`record_aux_syntax_incorrect`),
+			},
+		},
+	})
+}
+
+func TestRecordsCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
+	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
+	if testDomain == "" {
+		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+	}
+
+	now := time.Now()
+	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+
+	resourceConfigTemplate := `resource "allinkl_records" "test" {
+  zone_host   = "%s"
+  record_type = "%s"
+  record_name = "%s"
+  record_data = "%s"
+  record_aux  = %d
+}`
+
+	initialType := "A"
+	initialName := currentSecondsAndMS + "tf.test"
+	initialData := "mail.example.com."
+	initialAux := 10
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData, initialAux),
+				ExpectError: regexp.MustCompile(`record_aux must be empty or 0`),
 			},
 		},
 	})
