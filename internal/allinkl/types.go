@@ -2,6 +2,7 @@ package allinkl
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -69,17 +70,87 @@ type DDNSUpdateRequest struct {
 	DyndnsTargetIP string `json:"dyndns_target_ip"`
 }
 
+// Records API (scaffolded to map to DDNS for now)
+type RecordRequest struct {
+	ZoneHost   string `json:"zone_host"`
+	RecordId   int64  `json:"record_id"`
+	RecordType string `json:"record_type"`
+	RecordName string `json:"record_name"`
+	RecordData string `json:"record_data"`
+	RecordAux  int64  `json:"record_aux"`
+}
+
+type RecordUpdateRequest struct {
+	ZoneHost   string `json:"zone_host"`
+	RecordId   int64  `json:"record_id"`
+	RecordType string `json:"record_type"`
+	RecordName string `json:"record_name"`
+	RecordData string `json:"record_data"`
+	RecordAux  int64  `json:"record_aux"`
+}
+
+type GetRecordAPIResponse struct {
+	Response GetRecordResponse `json:"Response" mapstructure:"Response"`
+}
+
+type GetRecordResponse struct {
+	KasFloodDelay float64               `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    []GetRecordReturnInfo `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string                `json:"ReturnString"`
+}
+
+type GetRecordReturnInfo struct {
+	RecordZone       string      `json:"record_zone" mapstructure:"record_zone"`
+	RecordName       string      `json:"record_name" mapstructure:"record_name"`
+	RecordType       string      `json:"record_type" mapstructure:"record_type"`
+	RecordData       string      `json:"record_data" mapstructure:"record_data"`
+	RecordAux        int64       `json:"record_aux" mapstructure:"record_aux"`
+	RecordId         StringOrInt `json:"record_id" mapstructure:"record_id"`
+	RecordChangeable string      `json:"record_changeable" mapstructure:"record_changeable"`
+	RecordDeleteable string      `json:"record_deleteable" mapstructure:"record_deleteable"`
+}
+
+type AddRecordAPIResponse struct {
+	Response AddRecordResponse `json:"Response" mapstructure:"Response"`
+}
+
+type AddRecordResponse struct {
+	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
+}
+
+type UpdateRecordAPIResponse struct {
+	Response UpdateRecordResponse `json:"Response" mapstructure:"Response"`
+}
+
+type UpdateRecordResponse struct {
+	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
+}
+
+type DeleteRecordAPIResponse struct {
+	Response DeleteRecordResponse `json:"Response" mapstructure:"Response"`
+}
+
+type DeleteRecordResponse struct {
+	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
+}
+
 type GetDDNSUserAPIResponse struct {
 	Response GetDDNSUserResponse `json:"Response" mapstructure:"Response"`
 }
 
 type GetDDNSUserResponse struct {
-	KasFloodDelay float64      `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
-	ReturnInfo    []ReturnInfo `json:"ReturnInfo" mapstructure:"ReturnInfo"`
-	ReturnString  string       `json:"ReturnString"`
+	KasFloodDelay float64             `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    []GetDDNSReturnInfo `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string              `json:"ReturnString"`
 }
 
-type ReturnInfo struct {
+type GetDDNSReturnInfo struct {
 	DyndnsLogin      string `json:"dyndns_login" mapstructure:"dyndns_login"`
 	DyndnsComment    string `json:"dyndns_comment" mapstructure:"dyndns_comment"`
 	DyndnsLabel      string `json:"dyndns_label" mapstructure:"dyndns_label"`
@@ -152,6 +223,35 @@ type Item struct {
 	Key   *Item   `xml:"key" json:"key,omitempty"`
 	Value *Item   `xml:"value" json:"value,omitempty"`
 	Items []*Item `xml:"item" json:"item,omitempty"`
+}
+
+// StringOrInt is a helper type that can unmarshal JSON values
+// that may be either a string or an integer. The value is stored
+// as a string internally.
+type StringOrInt string
+
+func (s *StringOrInt) UnmarshalJSON(b []byte) error {
+	// Handle quoted string
+	if len(b) > 0 && b[0] == '"' {
+		var str string
+		if err := json.Unmarshal(b, &str); err != nil {
+			return err
+		}
+		*s = StringOrInt(str)
+		return nil
+	}
+	// Handle integer number
+	var num int64
+	if err := json.Unmarshal(b, &num); err == nil {
+		*s = StringOrInt(fmt.Sprintf("%d", num))
+		return nil
+	}
+	// Handle null gracefully
+	if string(b) == "null" {
+		*s = ""
+		return nil
+	}
+	return fmt.Errorf("StringOrInt: unsupported JSON value: %s", string(b))
 }
 
 func decodeXML[T any](reader io.Reader) (*T, error) {

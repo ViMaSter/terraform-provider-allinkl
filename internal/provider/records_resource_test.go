@@ -1,0 +1,135 @@
+package provider
+
+import (
+	"fmt"
+	"os"
+	"regexp"
+	"testing"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+)
+
+func TestRecordsCreateUpdateWithoutRecreate(t *testing.T) {
+	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
+	if testDomain == "" {
+		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+	}
+
+	now := time.Now()
+	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+
+	resourcePath := "allinkl_records.test"
+	resourceConfigTemplate := `resource "allinkl_records" "test" {
+  zone_host   = "%s"
+  record_type = "%s"
+  record_name = "%s"
+  record_data = "%s"
+  record_aux  = %d
+}`
+
+	initialType := "A"
+	initialName := currentSecondsAndMS + "tf.test"
+	initialData := "1.2.3.4"
+	initialAux := 10
+
+	updatedType := "AAAA"
+	updatedName := "updated." + initialName
+	updatedData := "2001:db8::1"
+	updatedAux := 20
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// create initial Record entry
+			{
+				Config: fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData, initialAux),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "zone_host", testDomain),
+					resource.TestCheckResourceAttr(resourcePath, "record_type", initialType),
+					resource.TestCheckResourceAttr(resourcePath, "record_name", initialName),
+					resource.TestCheckResourceAttr(resourcePath, "record_data", initialData),
+					resource.TestCheckResourceAttr(resourcePath, "record_aux", fmt.Sprintf("%d", initialAux)),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[resourcePath]
+						if !ok {
+							return fmt.Errorf("Not found: %s", resourcePath)
+						}
+						id := rs.Primary.Attributes["record_id"]
+						matched, err := regexp.MatchString(`^\d+$`, id)
+						if err != nil {
+							return err
+						}
+						if !matched {
+							return fmt.Errorf("record_id does not match expected pattern: got %q", id)
+						}
+						return nil
+					},
+				),
+			},
+			// update existing entry without replacement
+			{
+				Config: fmt.Sprintf(resourceConfigTemplate, testDomain, updatedType, initialName, updatedData, updatedAux),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "zone_host", testDomain+"."),
+					resource.TestCheckResourceAttr(resourcePath, "record_type", updatedType),
+					resource.TestCheckResourceAttr(resourcePath, "record_name", initialName),
+					resource.TestCheckResourceAttr(resourcePath, "record_data", updatedData),
+					resource.TestCheckResourceAttr(resourcePath, "record_aux", fmt.Sprintf("%d", updatedAux)),
+				),
+			},
+			// update property that forces replacement
+			{
+				Config: fmt.Sprintf(resourceConfigTemplate, testDomain, updatedType, updatedName, updatedData, updatedAux),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourcePath, plancheck.ResourceActionDestroyBeforeCreate),
+					},
+				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "record_name", updatedName),
+				),
+			},
+		},
+	})
+}
+
+func TestRecordsCreateFailsWithIllegalAux(t *testing.T) {
+	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
+	if testDomain == "" {
+		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+	}
+
+	now := time.Now()
+	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+
+	resourceConfigTemplate := `resource "allinkl_records" "test" {
+  zone_host   = "%s"
+  record_type = "%s"
+  record_name = "%s"
+  record_data = "%s"
+  record_aux  = %d
+}`
+
+	initialType := "A"
+	initialName := currentSecondsAndMS + "tf.test"
+	initialData := "1.2.3.4"
+	initialAux := -100
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData, initialAux),
+				ExpectError: regexp.MustCompile(`record_aux_syntax_incorrect`),
+			},
+		},
+	})
+}
