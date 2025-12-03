@@ -2,7 +2,7 @@ terraform {
   required_providers {
     allinkl = {
       source  = "ViMaSter/allinkl"
-      version = "0.1.6"
+      version = "0.1.7"
     }
   }
 }
