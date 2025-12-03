@@ -11,6 +11,12 @@ A Terraform provider for [all-inkl.com](https://all-inkl.com/)
 
 - [Creating a DDNS entry for an IPv4 address](examples/provider/provider.tf)
 
+## Usage References
+
+- [DDNS entries](examples/resources/allinkl_ddns/)
+
+- [DNS entries](examples/resources/allinkl_dns/)
+
 ## Developing the Provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
