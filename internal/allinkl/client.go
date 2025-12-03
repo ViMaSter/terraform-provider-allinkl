@@ -81,7 +81,7 @@ func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (GetDDNSRetu
 	return g.Response.ReturnInfo[0], nil
 }
 
-func (c *Client) AddDDNSUser(ctx context.Context, record DDNSRequest) (string, error) {
+func (c *Client) AddDDNSUser(ctx context.Context, dns DDNSRequest) (string, error) {
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
 		return "", err
@@ -89,7 +89,7 @@ func (c *Client) AddDDNSUser(ctx context.Context, record DDNSRequest) (string, e
 
 	ctx = WithContext(ctx, credential)
 
-	req, err := c.newRequest(ctx, "add_ddnsuser", record)
+	req, err := c.newRequest(ctx, "add_ddnsuser", dns)
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +102,7 @@ func (c *Client) AddDDNSUser(ctx context.Context, record DDNSRequest) (string, e
 	return g.Response.ReturnInfo, nil
 }
 
-func (c *Client) UpdateDDNSUser(ctx context.Context, record DDNSUpdateRequest) (string, error) {
+func (c *Client) UpdateDDNSUser(ctx context.Context, dns DDNSUpdateRequest) (string, error) {
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
 		return "", err
@@ -110,7 +110,7 @@ func (c *Client) UpdateDDNSUser(ctx context.Context, record DDNSUpdateRequest) (
 
 	ctx = WithContext(ctx, credential)
 
-	req, err := c.newRequest(ctx, "update_ddnsuser", record)
+	req, err := c.newRequest(ctx, "update_ddnsuser", dns)
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +144,7 @@ func (c *Client) DeleteDDNSUser(ctx context.Context, dyndnsLogin string) (string
 	c.updateFloodTime(g.Response.KasFloodDelay)
 	return g.Response.ReturnInfo, nil
 }
-func (c *Client) GetRecords(ctx context.Context, domain string) ([]GetRecordReturnInfo, error) {
+func (c *Client) GetDNS(ctx context.Context, domain string) ([]GetDNSReturnInfo, error) {
 	requestParams := map[string]string{"zone_host": domain}
 
 	credential, err := c.identifier.Authentication(ctx)
@@ -158,7 +158,7 @@ func (c *Client) GetRecords(ctx context.Context, domain string) ([]GetRecordRetu
 	if err != nil {
 		return nil, err
 	}
-	var g GetRecordAPIResponse
+	var g GetDNSAPIResponse
 	err = c.do(req, &g)
 	if err != nil {
 		return nil, err
@@ -166,11 +166,10 @@ func (c *Client) GetRecords(ctx context.Context, domain string) ([]GetRecordRetu
 
 	c.updateFloodTime(g.Response.KasFloodDelay)
 
-	// Always return all records (may be empty)
 	return g.Response.ReturnInfo, nil
 }
 
-func (c *Client) AddRecord(ctx context.Context, record RecordRequest) (int64, error) {
+func (c *Client) AddDNS(ctx context.Context, dns DNSRequest) (int64, error) {
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
 		return -1, err
@@ -179,29 +178,29 @@ func (c *Client) AddRecord(ctx context.Context, record RecordRequest) (int64, er
 	ctx = WithContext(ctx, credential)
 
 	requestParams := map[string]string{
-		"zone_host":   record.ZoneHost + ".",
-		"record_type": record.RecordType,
-		"record_name": record.RecordName,
-		"record_data": record.RecordData,
-		"record_aux":  strconv.FormatInt(record.RecordAux, 10),
+		"zone_host":   dns.ZoneHost + ".",
+		"record_type": dns.RecordType,
+		"record_name": dns.RecordName,
+		"record_data": dns.RecordData,
+		"record_aux":  strconv.FormatInt(dns.RecordAux, 10),
 	}
 	req, err := c.newRequest(ctx, "add_dns_settings", requestParams)
 	if err != nil {
 		return -1, err
 	}
-	var g AddRecordAPIResponse
+	var g AddDNSAPIResponse
 	if err = c.do(req, &g); err != nil {
 		return -1, err
 	}
 	c.updateFloodTime(g.Response.KasFloodDelay)
-	recordID, err := strconv.ParseInt(g.Response.ReturnInfo, 10, 64)
+	dnsID, err := strconv.ParseInt(g.Response.ReturnInfo, 10, 64)
 	if err != nil {
 		return -1, fmt.Errorf("parsing record ID from response: %w", err)
 	}
-	return recordID, nil
+	return dnsID, nil
 }
 
-func (c *Client) UpdateRecord(ctx context.Context, record RecordUpdateRequest) (string, error) {
+func (c *Client) UpdateDNS(ctx context.Context, dns DNSUpdateRequest) (string, error) {
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
 		return "", err
@@ -210,23 +209,23 @@ func (c *Client) UpdateRecord(ctx context.Context, record RecordUpdateRequest) (
 	ctx = WithContext(ctx, credential)
 
 	requestParams := map[string]string{
-		"record_id": strconv.FormatInt(record.RecordId, 10),
+		"record_id": strconv.FormatInt(dns.RecordId, 10),
 	}
-	if record.RecordName != "" {
-		requestParams["record_name"] = record.RecordName
+	if dns.RecordName != "" {
+		requestParams["record_name"] = dns.RecordName
 	}
-	if record.RecordData != "" {
-		requestParams["record_data"] = record.RecordData
+	if dns.RecordData != "" {
+		requestParams["record_data"] = dns.RecordData
 	}
-	if record.RecordAux != 0 {
-		requestParams["record_aux"] = strconv.FormatInt(record.RecordAux, 10)
+	if dns.RecordAux != 0 {
+		requestParams["record_aux"] = strconv.FormatInt(dns.RecordAux, 10)
 	}
 
 	req, err := c.newRequest(ctx, "update_dns_settings", requestParams)
 	if err != nil {
 		return "", err
 	}
-	var g UpdateRecordAPIResponse
+	var g UpdateDNSAPIResponse
 	if err = c.do(req, &g); err != nil {
 		return "", err
 	}
@@ -235,7 +234,7 @@ func (c *Client) UpdateRecord(ctx context.Context, record RecordUpdateRequest) (
 	return g.Response.ReturnString, nil
 }
 
-func (c *Client) DeleteRecord(ctx context.Context, recordID int64) (string, error) {
+func (c *Client) DeleteDNS(ctx context.Context, dnsID int64) (string, error) {
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
 		return "", err
@@ -243,12 +242,12 @@ func (c *Client) DeleteRecord(ctx context.Context, recordID int64) (string, erro
 
 	ctx = WithContext(ctx, credential)
 
-	requestParams := map[string]string{"record_id": strconv.FormatInt(recordID, 10)}
+	requestParams := map[string]string{"record_id": strconv.FormatInt(dnsID, 10)}
 	req, err := c.newRequest(ctx, "delete_dns_settings", requestParams)
 	if err != nil {
 		return "", err
 	}
-	var g DeleteRecordAPIResponse
+	var g DeleteDNSAPIResponse
 	if err = c.do(req, &g); err != nil {
 		return "", err
 	}
@@ -304,7 +303,6 @@ func (c *Client) do(req *http.Request, result any) error {
 		Result:           result,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			func(from reflect.Type, to reflect.Type, data any) (any, error) {
-				// Convert int64 or string into StringOrInt
 				if to == reflect.TypeOf(StringOrInt("")) {
 					switch v := data.(type) {
 					case string:

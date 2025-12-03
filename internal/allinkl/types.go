@@ -71,7 +71,7 @@ type DDNSUpdateRequest struct {
 }
 
 // Records API (scaffolded to map to DDNS for now)
-type RecordRequest struct {
+type DNSRequest struct {
 	ZoneHost   string `json:"zone_host"`
 	RecordId   int64  `json:"record_id"`
 	RecordType string `json:"record_type"`
@@ -80,7 +80,7 @@ type RecordRequest struct {
 	RecordAux  int64  `json:"record_aux"`
 }
 
-type RecordUpdateRequest struct {
+type DNSUpdateRequest struct {
 	ZoneHost   string `json:"zone_host"`
 	RecordId   int64  `json:"record_id"`
 	RecordType string `json:"record_type"`
@@ -89,17 +89,17 @@ type RecordUpdateRequest struct {
 	RecordAux  int64  `json:"record_aux"`
 }
 
-type GetRecordAPIResponse struct {
-	Response GetRecordResponse `json:"Response" mapstructure:"Response"`
+type GetDNSAPIResponse struct {
+	Response GetDNSResponse `json:"Response" mapstructure:"Response"`
 }
 
-type GetRecordResponse struct {
-	KasFloodDelay float64               `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
-	ReturnInfo    []GetRecordReturnInfo `json:"ReturnInfo" mapstructure:"ReturnInfo"`
-	ReturnString  string                `json:"ReturnString"`
+type GetDNSResponse struct {
+	KasFloodDelay float64            `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
+	ReturnInfo    []GetDNSReturnInfo `json:"ReturnInfo" mapstructure:"ReturnInfo"`
+	ReturnString  string             `json:"ReturnString"`
 }
 
-type GetRecordReturnInfo struct {
+type GetDNSReturnInfo struct {
 	RecordZone       string      `json:"record_zone" mapstructure:"record_zone"`
 	RecordName       string      `json:"record_name" mapstructure:"record_name"`
 	RecordType       string      `json:"record_type" mapstructure:"record_type"`
@@ -110,31 +110,31 @@ type GetRecordReturnInfo struct {
 	RecordDeleteable string      `json:"record_deleteable" mapstructure:"record_deleteable"`
 }
 
-type AddRecordAPIResponse struct {
-	Response AddRecordResponse `json:"Response" mapstructure:"Response"`
+type AddDNSAPIResponse struct {
+	Response AddDNSResponse `json:"Response" mapstructure:"Response"`
 }
 
-type AddRecordResponse struct {
+type AddDNSResponse struct {
 	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
 	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
 	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
 }
 
-type UpdateRecordAPIResponse struct {
-	Response UpdateRecordResponse `json:"Response" mapstructure:"Response"`
+type UpdateDNSAPIResponse struct {
+	Response UpdateDNSResponse `json:"Response" mapstructure:"Response"`
 }
 
-type UpdateRecordResponse struct {
+type UpdateDNSResponse struct {
 	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
 	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
 	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
 }
 
-type DeleteRecordAPIResponse struct {
-	Response DeleteRecordResponse `json:"Response" mapstructure:"Response"`
+type DeleteDNSAPIResponse struct {
+	Response DeleteDNSResponse `json:"Response" mapstructure:"Response"`
 }
 
-type DeleteRecordResponse struct {
+type DeleteDNSResponse struct {
 	KasFloodDelay float64 `json:"KasFloodDelay" mapstructure:"KasFloodDelay"`
 	ReturnInfo    string  `json:"ReturnInfo" mapstructure:"ReturnInfo"`
 	ReturnString  string  `json:"ReturnString" mapstructure:"ReturnString"`
