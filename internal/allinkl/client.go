@@ -67,8 +67,6 @@ func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (GetDDNSRetu
 	c.updateFloodTime(g.Response.KasFloodDelay)
 
 	if len(g.Response.ReturnInfo) == 0 {
-		// output warning that no DDNS user was found
-		fmt.Println("Warning: No DDNS user found")
 		var empty GetDDNSReturnInfo
 		return empty, nil
 	}
