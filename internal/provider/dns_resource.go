@@ -93,7 +93,7 @@ func (d *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest
 	client, ok := req.ProviderData.(*allinkl.Client)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Data Source Configure Type",
+			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected *allinkl.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
