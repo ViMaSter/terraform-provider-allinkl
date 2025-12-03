@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,14 +39,14 @@ func NewClient(username string, kasAuthType string, kasAuthData string) *Client 
 			Timeout: 30 * time.Second,
 		},
 	}
-
 }
-func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (ReturnInfo, error) {
+
+func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (GetDDNSReturnInfo, error) {
 	requestParams := map[string]string{"ddns_login": ddnsLogin}
 
 	credential, err := c.identifier.Authentication(ctx)
 	if err != nil {
-		var empty ReturnInfo
+		var empty GetDDNSReturnInfo
 		return empty, err
 	}
 
@@ -53,25 +54,27 @@ func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (ReturnInfo,
 
 	req, err := c.newRequest(ctx, "get_ddnsusers", requestParams)
 	if err != nil {
-		var empty ReturnInfo
+		var empty GetDDNSReturnInfo
 		return empty, err
 	}
 	var g GetDDNSUserAPIResponse
 	err = c.do(req, &g)
 	if err != nil {
-		var empty ReturnInfo
+		var empty GetDDNSReturnInfo
 		return empty, err
 	}
 
 	c.updateFloodTime(g.Response.KasFloodDelay)
 
 	if len(g.Response.ReturnInfo) == 0 {
-		var empty ReturnInfo
+		// output warning that no DDNS user was found
+		fmt.Println("Warning: No DDNS user found")
+		var empty GetDDNSReturnInfo
 		return empty, nil
 	}
 
 	if len(g.Response.ReturnInfo) != 1 {
-		var empty ReturnInfo
+		var empty GetDDNSReturnInfo
 		return empty, fmt.Errorf("expected exactly 1 DDNS user, got %d", len(g.Response.ReturnInfo))
 	}
 
@@ -141,6 +144,117 @@ func (c *Client) DeleteDDNSUser(ctx context.Context, dyndnsLogin string) (string
 	c.updateFloodTime(g.Response.KasFloodDelay)
 	return g.Response.ReturnInfo, nil
 }
+func (c *Client) GetRecords(ctx context.Context, domain string) ([]GetRecordReturnInfo, error) {
+	requestParams := map[string]string{"zone_host": domain}
+
+	credential, err := c.identifier.Authentication(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = WithContext(ctx, credential)
+
+	req, err := c.newRequest(ctx, "get_dns_settings", requestParams)
+	if err != nil {
+		return nil, err
+	}
+	var g GetRecordAPIResponse
+	err = c.do(req, &g)
+	if err != nil {
+		return nil, err
+	}
+
+	c.updateFloodTime(g.Response.KasFloodDelay)
+
+	// Always return all records (may be empty)
+	return g.Response.ReturnInfo, nil
+}
+
+func (c *Client) AddRecord(ctx context.Context, record RecordRequest) (int64, error) {
+	credential, err := c.identifier.Authentication(ctx)
+	if err != nil {
+		return -1, err
+	}
+
+	ctx = WithContext(ctx, credential)
+
+	requestParams := map[string]string{
+		"zone_host":   record.ZoneHost + ".",
+		"record_type": record.RecordType,
+		"record_name": record.RecordName,
+		"record_data": record.RecordData,
+		"record_aux":  strconv.FormatInt(record.RecordAux, 10),
+	}
+	req, err := c.newRequest(ctx, "add_dns_settings", requestParams)
+	if err != nil {
+		return -1, err
+	}
+	var g AddRecordAPIResponse
+	if err = c.do(req, &g); err != nil {
+		return -1, err
+	}
+	c.updateFloodTime(g.Response.KasFloodDelay)
+	recordID, err := strconv.ParseInt(g.Response.ReturnInfo, 10, 64)
+	if err != nil {
+		return -1, fmt.Errorf("parsing record ID from response: %w", err)
+	}
+	return recordID, nil
+}
+
+func (c *Client) UpdateRecord(ctx context.Context, record RecordUpdateRequest) (string, error) {
+	credential, err := c.identifier.Authentication(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	ctx = WithContext(ctx, credential)
+
+	requestParams := map[string]string{
+		"record_id": strconv.FormatInt(record.RecordId, 10),
+	}
+	if record.RecordName != "" {
+		requestParams["record_name"] = record.RecordName
+	}
+	if record.RecordData != "" {
+		requestParams["record_data"] = record.RecordData
+	}
+	if record.RecordAux != 0 {
+		requestParams["record_aux"] = strconv.FormatInt(record.RecordAux, 10)
+	}
+
+	req, err := c.newRequest(ctx, "update_dns_settings", requestParams)
+	if err != nil {
+		return "", err
+	}
+	var g UpdateRecordAPIResponse
+	if err = c.do(req, &g); err != nil {
+		return "", err
+	}
+	c.updateFloodTime(g.Response.KasFloodDelay)
+	// ReturnString is expected to be "TRUE" on success
+	return g.Response.ReturnString, nil
+}
+
+func (c *Client) DeleteRecord(ctx context.Context, recordID int64) (string, error) {
+	credential, err := c.identifier.Authentication(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	ctx = WithContext(ctx, credential)
+
+	requestParams := map[string]string{"record_id": strconv.FormatInt(recordID, 10)}
+	req, err := c.newRequest(ctx, "delete_dns_settings", requestParams)
+	if err != nil {
+		return "", err
+	}
+	var g DeleteRecordAPIResponse
+	if err = c.do(req, &g); err != nil {
+		return "", err
+	}
+	c.updateFloodTime(g.Response.KasFloodDelay)
+	return g.Response.ReturnInfo, nil
+}
 
 func (c *Client) newRequest(ctx context.Context, action string, requestParams any) (*http.Request, error) {
 	ar := KasRequest{
@@ -185,7 +299,29 @@ func (c *Client) do(req *http.Request, result any) error {
 		return envlp.Body.Fault
 	}
 	raw := getValue(envlp.Body.KasAPIResponse.Return)
-	err = mapstructure.Decode(raw, result)
+	decCfg := &mapstructure.DecoderConfig{
+		WeaklyTypedInput: true,
+		Result:           result,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			func(from reflect.Type, to reflect.Type, data any) (any, error) {
+				// Convert int64 or string into StringOrInt
+				if to == reflect.TypeOf(StringOrInt("")) {
+					switch v := data.(type) {
+					case string:
+						return StringOrInt(v), nil
+					case int64:
+						return StringOrInt(fmt.Sprintf("%d", v)), nil
+					}
+				}
+				return data, nil
+			},
+		),
+	}
+	decoder, err := mapstructure.NewDecoder(decCfg)
+	if err != nil {
+		return fmt.Errorf("mapstructure new decoder: %w", err)
+	}
+	err = decoder.Decode(raw)
 	if err != nil {
 		return fmt.Errorf("response struct decode: %w", err)
 	}
