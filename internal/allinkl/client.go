@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -67,8 +68,7 @@ func (c *Client) GetDDNSUser(ctx context.Context, ddnsLogin string) (GetDDNSRetu
 	c.updateFloodTime(g.Response.KasFloodDelay)
 
 	if len(g.Response.ReturnInfo) == 0 {
-		// output warning that no DDNS user was found
-		fmt.Println("Warning: No DDNS user found")
+		tflog.Warn(ctx, "No DDNS user found")
 		var empty GetDDNSReturnInfo
 		return empty, nil
 	}
