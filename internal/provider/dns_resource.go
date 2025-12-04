@@ -85,7 +85,7 @@ func (r *dnsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	}
 }
 
-func (d *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -99,7 +99,7 @@ func (d *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest
 		return
 	}
 
-	d.client = client
+	r.client = client
 }
 
 func ValidateDNSRecord(recordType string, recordAux int64) bool {
