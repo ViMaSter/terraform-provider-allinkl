@@ -8,13 +8,13 @@ FEATURES:
 
 BUG FIXES:
 
-* Issues with state management
+* Fixed bug where state was not persisted correctly after DNS entry updates, causing inconsistent resource states.
 
 ## 0.1.6 (November 30, 2025)
 
 BUG FIXES:
 
-* Issues with state management
+* Fixed issue where state synchronization failed during concurrent updates, leading to race conditions and possible data loss.
 
 ## 0.1.5 (September 5, 2025)
 
