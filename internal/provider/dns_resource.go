@@ -84,7 +84,7 @@ func (r *dnsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(0),
-				Description: "Priority value for MX and SRV records. Required for MX and SRV record types, optional (defaults to 0) for all other record types.",
+				Description: "Priority value for MX and SRV records. Optional for all other record types (defaults to 0). For non-MX/SRV records, this value must be 0 or omitted; non-zero values will result in a validation error.",
 			},
 		},
 	}
