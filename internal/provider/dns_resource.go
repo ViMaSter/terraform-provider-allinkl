@@ -222,7 +222,7 @@ func (r *dnsResource) Update(ctx context.Context, req resource.UpdateRequest, re
 
 	// Validate aux: only allowed non-zero for MX or SRV. Otherwise must be 0.
 	if !ValidateDNSRecord(plan.RecordType.ValueString(), plan.RecordAux.ValueInt64()) {
-		reportErrorWithDescription(resp.Diagnostics.AddError, OperationCreate, "record_aux must be empty or 0 unless record_type is MX or SRV")
+		reportErrorWithDescription(resp.Diagnostics.AddError, OperationUpdate, "record_aux must be empty or 0 unless record_type is MX or SRV")
 		return
 	}
 
