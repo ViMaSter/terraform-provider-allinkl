@@ -1,2 +1,2 @@
 # dns entries are imported using their ID
-terraform import allinkl_ddns.home 123456789
+terraform import allinkl_dns.home 123456789
