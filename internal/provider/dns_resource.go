@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vimaster/terraform-provider-allinkl/internal/allinkl"
@@ -103,7 +104,9 @@ func (r *dnsResource) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 func ValidateDNSRecord(recordType string, recordAux int64) bool {
-	if recordType != "MX" && recordType != "mx" && recordType != "SRV" && recordType != "srv" {
+	// Normalize record type to uppercase for consistent comparison
+	normalizedType := strings.ToUpper(recordType)
+	if normalizedType != "MX" && normalizedType != "SRV" {
 		if recordAux != 0 {
 			return false
 		}
