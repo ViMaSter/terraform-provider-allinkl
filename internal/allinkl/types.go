@@ -70,7 +70,6 @@ type DDNSUpdateRequest struct {
 	DyndnsTargetIP string `json:"dyndns_target_ip"`
 }
 
-// Records API (scaffolded to map to DDNS for now)
 type DNSRequest struct {
 	ZoneHost   string `json:"zone_host"`
 	RecordType string `json:"record_type"`
