@@ -183,7 +183,7 @@ func (r *dnsResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	if dns.RecordName == "" {
 		resp.Diagnostics.AddError(
 			"DNS Not Found",
-			fmt.Sprintf("No record found for login: %d", state.RecordId.ValueInt64()),
+			fmt.Sprintf("No record found for record_id: %d", state.RecordId.ValueInt64()),
 		)
 		return
 	}
