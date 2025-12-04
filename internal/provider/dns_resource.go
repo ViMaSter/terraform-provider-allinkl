@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -80,7 +81,10 @@ func (r *dnsResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required: true,
 			},
 			"record_aux": schema.Int64Attribute{
-				Required: true,
+				Optional: true,
+				Computed: true,
+				Default:  int64default.StaticInt64(0),
+				Description: "Priority value for MX and SRV records. Required for MX and SRV record types, optional (defaults to 0) for all other record types.",
 			},
 		},
 	}
