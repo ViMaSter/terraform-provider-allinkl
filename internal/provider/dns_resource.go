@@ -256,6 +256,14 @@ func (r *dnsResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		}
 	}
 
+	if dns.RecordName == "" {
+		resp.Diagnostics.AddError(
+			"DNS Not Found",
+			fmt.Sprintf("No record found for record_id: %d after update", plan.RecordId.ValueInt64()),
+		)
+		return
+	}
+
 	idAsInt64, err := strconv.ParseInt(string(dns.RecordId), 10, 64)
 	if err != nil {
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, "Could not parse record ID: "+err.Error())
