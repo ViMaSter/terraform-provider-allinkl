@@ -73,7 +73,6 @@ type DDNSUpdateRequest struct {
 // Records API (scaffolded to map to DDNS for now)
 type DNSRequest struct {
 	ZoneHost   string `json:"zone_host"`
-	RecordId   int64  `json:"record_id"`
 	RecordType string `json:"record_type"`
 	RecordName string `json:"record_name"`
 	RecordData string `json:"record_data"`
