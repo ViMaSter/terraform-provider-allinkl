@@ -142,7 +142,6 @@ func (r *dnsResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	plan.RecordId = types.Int64Value(recordId)
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
-	plan.ZoneHost = types.StringValue(plan.ZoneHost.ValueString())
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
