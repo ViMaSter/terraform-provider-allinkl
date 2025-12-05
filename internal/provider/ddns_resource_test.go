@@ -15,11 +15,10 @@ import (
 func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
-		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
 	}
 
-	now := time.Now()
-	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	resourcePath := "allinkl_ddns.test"
 	resourceConfigTemplate := `resource "allinkl_ddns" "test" {
@@ -103,11 +102,10 @@ func TestDDNSCreateUpdateWithoutRecreate(t *testing.T) {
 func TestDDNSCreateFailsWithIllegalCharactersInPassword(t *testing.T) {
 	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
 	if testDomain == "" {
-		t.Fatal("ALLINKL_TEST_DOMAIN environment variable must be set")
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
 	}
 
-	now := time.Now()
-	currentSecondsAndMS := fmt.Sprintf("%02d%03d", now.Unix()%100, now.Nanosecond()/1e6)
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	resourceConfigTemplate := `resource "allinkl_ddns" "test" {
   dyndns_comment   = "%s"

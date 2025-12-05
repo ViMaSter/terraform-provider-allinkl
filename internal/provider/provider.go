@@ -183,5 +183,6 @@ func (p *allinklProvider) DataSources(_ context.Context) []func() datasource.Dat
 func (p *allinklProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewDDNSResource,
+		NewDNSResource,
 	}
 }

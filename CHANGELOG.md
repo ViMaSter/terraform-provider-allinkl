@@ -1,4 +1,22 @@
-## 0.1.5 (Unreleased)
+## 0.2.0 (Unreleased)
+
+FEATURES:
+
+* Adds support for DNS entries
+
+## 0.1.7 (November 30, 2025)
+
+BUG FIXES:
+
+* Fixed bug where state was not persisted correctly after DNS entry updates, causing inconsistent resource states.
+
+## 0.1.6 (November 30, 2025)
+
+BUG FIXES:
+
+* Fixed issue where state synchronization failed during concurrent updates, leading to race conditions and possible data loss.
+
+## 0.1.5 (September 5, 2025)
 
 BUG FIXES:
 
