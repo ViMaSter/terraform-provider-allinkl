@@ -237,5 +237,5 @@ func (r *ddnsResource) ImportState(ctx context.Context, req resource.ImportState
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("dyndns_login"), req.ID)...)
 }
