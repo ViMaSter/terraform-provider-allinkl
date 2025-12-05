@@ -244,21 +244,19 @@ func (r *dnsResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		reportErrorWithDescription(resp.Diagnostics.AddError, OperationRead, err.Error())
 		return
 	}
-	var dns allinkl.GetDNSReturnInfo
-	var found bool
+	var dns *allinkl.GetDNSReturnInfo
 	for _, r := range dnsRecords {
 		idAsInt64, err := strconv.ParseInt(string(r.RecordId), 10, 64)
 		if err != nil {
 			continue
 		}
 		if idAsInt64 == plan.RecordId.ValueInt64() {
-			dns = r
-			found = true
+			dns = &r
 			break
 		}
 	}
 
-	if !found {
+	if dns == nil {
 		resp.Diagnostics.AddError(
 			"DNS Not Found",
 			fmt.Sprintf("No record found for record_id: %d after update", plan.RecordId.ValueInt64()),
