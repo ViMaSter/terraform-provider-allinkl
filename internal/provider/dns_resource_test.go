@@ -214,3 +214,42 @@ func TestDNSCreateFailsForTypeWithNoAuxSupport(t *testing.T) {
 		},
 	})
 }
+
+func TestDNSCreateWithoutRecordAuxForNonMXRecord(t *testing.T) {
+	testDomain := os.Getenv("ALLINKL_TEST_DOMAIN")
+	if testDomain == "" {
+		t.Skip("ALLINKL_TEST_DOMAIN environment variable must be set")
+	}
+
+	currentSecondsAndMS := fmt.Sprintf("%d", time.Now().UnixNano())
+
+	resourcePath := "allinkl_dns.test"
+	// Template without record_aux - tests that it's optional for non-MX/SRV records
+	resourceConfigTemplate := `resource "allinkl_dns" "test" {
+  zone_host   = "%s"
+  record_type = "%s"
+  record_name = "%s"
+  record_data = "%s"
+}`
+
+	initialType := "A"
+	initialName := currentSecondsAndMS + "tf.test"
+	initialData := "203.0.113.10"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(resourceConfigTemplate, testDomain, initialType, initialName, initialData),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "zone_host", testDomain),
+					resource.TestCheckResourceAttr(resourcePath, "record_type", initialType),
+					resource.TestCheckResourceAttr(resourcePath, "record_name", initialName),
+					resource.TestCheckResourceAttr(resourcePath, "record_data", initialData),
+					// Verify record_aux defaults to 0 when not specified
+					resource.TestCheckResourceAttr(resourcePath, "record_aux", "0"),
+				),
+			},
+		},
+	})
+}
