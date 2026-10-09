@@ -2,7 +2,7 @@ module github.com/vimaster/terraform-provider-allinkl
 
 go 1.24.0
 
-toolchain go1.26.0
+toolchain go1.27.2
 
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.18.0
